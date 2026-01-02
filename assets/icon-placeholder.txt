@@ -1,0 +1,38 @@
+# Application Icon
+
+The application icon has been created and is ready for use.
+
+## Files Created
+
+- **icon.svg**: Vector source file (256x256) with Bilibili-themed design
+- **icon.ico**: Windows icon file (256x256, 32-bit RGBA) for the application
+
+## Icon Design
+
+The icon features:
+- Bilibili brand blue gradient background (#00A1D6 to #0084B8)
+- Rounded corners for modern appearance
+- White video player symbol (rectangle with play triangle)
+- White download arrow below the video symbol
+- Suitable for Windows 7 and later
+
+## Regenerating the Icon
+
+If you need to regenerate or modify the icon:
+
+1. Edit the SVG: `assets/icon.svg`
+2. Run the generator: `node scripts/generate-icon.js`
+3. Create ICO file: `node scripts/create-simple-icon.js`
+
+Or manually convert using ImageMagick:
+```
+magick convert assets/icon.svg -define icon:auto-resize=256,128,64,48,32,16 assets/icon.ico
+```
+
+## Build Configuration
+
+The icon is configured in `electron-builder.yml`:
+```yaml
+win:
+  icon: assets/icon.ico
+```

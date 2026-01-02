@@ -1,0 +1,25 @@
+appId: com.bilibili.downloader
+productName: Bilibili Downloader
+directories:
+  output: dist-builder
+  buildResources: assets
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+  - node_modules/**/*
+asar: true
+asarUnpack:
+  - "**/*.node"
+compression: maximum
+win:
+  target:
+    - target: portable
+      arch:
+        - ia32
+  icon: assets/icon.ico
+  artifactName: BilibiliDownloader-Portable.exe
+  requestedExecutionLevel: asInvoker
+portable:
+  artifactName: BilibiliDownloader-Portable.exe
+  unicode: false

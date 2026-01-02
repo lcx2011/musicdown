@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electron API 测试</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 3px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>Electron API 测试页面</h1>
+  
+  <div class="test-section">
+    <h2>1. 环境检查</h2>
+    <button onclick="checkEnvironment()">检查环境</button>
+    <div id="env-result" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. 测试视频提取 API</h2>
+    <input type="text" id="video-url" value="https://www.bilibili.com/video/BV1d88EzzEsm" style="width: 400px;">
+    <button onclick="testExtractVideo()">提取视频信息</button>
+    <div id="extract-result" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. 测试视频下载</h2>
+    <input type="text" id="download-url" value="" placeholder="从上面的提取结果复制 resource_url" style="width: 400px;">
+    <button onclick="testDownloadVideo()">下载视频</button>
+    <div id="download-result" class="result"></div>
+  </div>
+
+  <script>
+    function log(elementId, message, isError = false) {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.className = 'result ' + (isError ? 'error' : 'success');
+    }
+
+    function checkEnvironment() {
+      const info = {
+        'Electron': process.versions.electron || 'Not in Electron',
+        'Node': process.versions.node || 'Not available',
+        'Chrome': process.versions.chrome || 'Not available',
+        'Context Isolation': process.contextIsolated,
+        'electronAPI available': typeof window.electronAPI !== 'undefined',
+      };
+
+      if (window.electronAPI) {
+        info['electronAPI methods'] = Object.keys(window.electronAPI).join(', ');
+      }
+
+      log('env-result', JSON.stringify(info, null, 2));
+    }
+
+    async function testExtractVideo() {
+      const videoUrl = document.getElementById('video-url').value;
+      
+      if (!window.electronAPI) {
+        log('extract-result', 'Error: electronAPI not available', true);
+        return;
+      }
+
+      try {
+        log('extract-result', 'Extracting video information...');
+        
+        const result = await window.electronAPI.extractVideo(videoUrl);
+        
+        if (result.success) {
+          const data = result.data;
+          const output = {
+            title: data.text,
+            mediaCount: data.medias?.length || 0,
+            firstMedia: data.medias?.[0] ? {
+              type: data.medias[0].media_type,
+              url: data.medias[0].resource_url.substring(0, 100) + '...',
+              preview: data.medias[0].preview_url
+            } : null
+          };
+          
+          log('extract-result', '✓ Success!\n\n' + JSON.stringify(output, null, 2));
+          
+          // Auto-fill download URL
+          if (data.medias?.[0]?.resource_url) {
+            document.getElementById('download-url').value = data.medias[0].resource_url;
+          }
+        } else {
+          log('extract-result', '✗ Failed: ' + (result.error || 'Unknown error'), true);
+        }
+      } catch (error) {
+        log('extract-result', '✗ Exception: ' + error.message, true);
+      }
+    }
+
+    async function testDownloadVideo() {
+      const downloadUrl = document.getElementById('download-url').value;
+      
+      if (!downloadUrl) {
+        log('download-result', 'Error: Please provide a download URL', true);
+        return;
+      }
+
+      if (!window.electronAPI) {
+        log('download-result', 'Error: electronAPI not available', true);
+        return;
+      }
+
+      try {
+        log('download-result', 'Downloading video...');
+        
+        const result = await window.electronAPI.downloadVideo(downloadUrl, false);
+        
+        if (result.success) {
+          const sizeMB = (result.size / 1024 / 1024).toFixed(2);
+          log('download-result', `✓ Success!\n\nDownloaded ${sizeMB} MB`);
+        } else {
+          log('download-result', '✗ Failed: ' + (result.error || 'Unknown error'), true);
+        }
+      } catch (error) {
+        log('download-result', '✗ Exception: ' + error.message, true);
+      }
+    }
+
+    // Auto-check environment on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(checkEnvironment, 500);
+    });
+  </script>
+</body>
+</html>
