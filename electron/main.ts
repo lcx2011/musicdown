@@ -80,25 +80,7 @@ function createWindow() {
     // Production: load from packaged files
     // __dirname is dist-electron/electron, so we need to go up two levels
     const indexPath = path.join(__dirname, '../../dist/index.html');
-    console.log('Loading from:', indexPath);
-    console.log('__dirname:', __dirname);
-    console.log('app.isPackaged:', app.isPackaged);
-    
     mainWindow.loadFile(indexPath);
-    
-    // Open DevTools in production to debug
-    mainWindow.webContents.openDevTools();
-    
-    // Log any errors
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-      console.error('Failed to load:', errorCode, errorDescription);
-    });
-    
-    mainWindow.webContents.on('did-finish-load', () => {
-      console.log('Page loaded successfully');
-    });
-    
-    console.log('Loaded from production build:', indexPath);
   }
 
   mainWindow.on('closed', () => {
