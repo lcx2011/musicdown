@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -15,15 +15,14 @@ function createWindow() {
   // Requirements: 7.1
   Menu.setApplicationMenu(null);
 
-  // Configure borderless window with rounded corners
+  // Configure window with system frame
   // Requirements: 7.1
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    frame: false, // Borderless window
+    frame: true, // Use system window frame with standard controls
     transparent: false,
     backgroundColor: '#ffffff',
-    roundedCorners: true, // Rounded corners for modern look
     webPreferences: {
       // Enable nodeIntegration for file system access
       // Requirements: 6.1
@@ -38,11 +37,6 @@ function createWindow() {
     },
   });
 
-  // Load the app
-  // In development, load from Vite dev server
-  // Check if we can connect to the dev server
-  const devServerUrl = 'http://localhost:5173';
-  
   // Set Content Security Policy
   // Requirements: 7.1
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
@@ -71,14 +65,39 @@ function createWindow() {
     }
   );
   
-  try {
+  // Load the app
+  // In development, load from Vite dev server
+  // In production, load from packaged files
+  const devServerUrl = 'http://localhost:5173';
+  
+  // Check if we're in development or production
+  // app.isPackaged is more reliable than NODE_ENV
+  if (!app.isPackaged) {
     mainWindow.loadURL(devServerUrl);
     mainWindow.webContents.openDevTools();
     console.log('Loaded from Vite dev server:', devServerUrl);
-  } catch (error) {
-    // Fallback to production build
-    const indexPath = path.join(__dirname, '../dist/index.html');
+  } else {
+    // Production: load from packaged files
+    // __dirname is dist-electron/electron, so we need to go up two levels
+    const indexPath = path.join(__dirname, '../../dist/index.html');
+    console.log('Loading from:', indexPath);
+    console.log('__dirname:', __dirname);
+    console.log('app.isPackaged:', app.isPackaged);
+    
     mainWindow.loadFile(indexPath);
+    
+    // Open DevTools in production to debug
+    mainWindow.webContents.openDevTools();
+    
+    // Log any errors
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      console.error('Failed to load:', errorCode, errorDescription);
+    });
+    
+    mainWindow.webContents.on('did-finish-load', () => {
+      console.log('Page loaded successfully');
+    });
+    
     console.log('Loaded from production build:', indexPath);
   }
 
@@ -259,6 +278,22 @@ function setupIPCHandlers() {
         success: false, 
         error: error.message || 'Unknown error',
         statusCode: error.response?.status,
+      };
+    }
+  });
+
+  /**
+   * IPC handler for opening URLs in external browser
+   * Requirements: 3.1, 3.4
+   */
+  ipcMain.handle('open-external', async (_event, { url }: { url: string }) => {
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       };
     }
   });

@@ -3,7 +3,8 @@
  * Requirements: 3.1, 3.2, 3.4
  */
 
-import { shell } from 'electron';
+// Use IPC to communicate with main process instead of direct electron import
+const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null };
 
 /**
  * Video Service for constructing URLs and launching browser previews
@@ -70,9 +71,16 @@ export class VideoService {
     }
 
     try {
-      // Use Electron shell.openExternal to open URL in default browser
-      // This returns a Promise<void> that resolves when the browser is launched
-      await shell.openExternal(videoUrl);
+      // Use IPC to open URL in default browser via main process
+      if (ipcRenderer) {
+        const result = await ipcRenderer.invoke('open-external', { url: videoUrl });
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to open browser');
+        }
+      } else {
+        // Fallback for non-Electron environment (shouldn't happen in production)
+        throw new Error('Electron IPC not available');
+      }
     } catch (error) {
       // Handle browser launch errors
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

@@ -4,10 +4,19 @@
  */
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import crypto from 'crypto';
 import { ExtractionResponse, SearchResponse } from '../types';
 import { withRetry, DEFAULT_RETRY_CONFIG } from '../utils/retry';
 import { ENV } from '../config/env';
+
+// Dynamically load crypto only in Node.js environment
+let crypto: any = null;
+if (typeof window !== 'undefined' && (window as any).require) {
+  try {
+    crypto = (window as any).require('crypto');
+  } catch (e) {
+    console.warn('Failed to load crypto module:', e);
+  }
+}
 
 /**
  * Custom error class for API-related errors
@@ -91,11 +100,23 @@ export class APIClient {
    */
   private generateFooter(data: string, timestamp: string): string {
     // Simple hash implementation - replace with actual API requirements
-    const hash = crypto
-      .createHash('md5')
-      .update(data + timestamp)
-      .digest('hex');
-    return hash;
+    if (crypto && crypto.createHash) {
+      const hash = crypto
+        .createHash('md5')
+        .update(data + timestamp)
+        .digest('hex');
+      return hash;
+    } else {
+      // Fallback: simple string hash for browser environment
+      let hash = 0;
+      const str = data + timestamp;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return Math.abs(hash).toString(16);
+    }
   }
 
   /**
