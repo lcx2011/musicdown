@@ -14,6 +14,8 @@ This document specifies the requirements for a lightweight, portable Bilibili vi
 - **API Client**: The component that communicates with the Bilibili extraction API
 - **Browser Preview**: The system default web browser used to preview video content
 - **Desktop Storage**: The Windows desktop directory where downloaded videos are saved
+- **Download Directory**: The user-configurable directory path where downloaded videos are saved
+- **Directory Selector**: A UI control that allows users to choose a custom download location
 
 ## Requirements
 
@@ -54,14 +56,14 @@ This document specifies the requirements for a lightweight, portable Bilibili vi
 
 ### Requirement 4: Video Download
 
-**User Story:** As a user, I want to download videos with a single click to my desktop, so that I can quickly save content to my USB drive.
+**User Story:** As a user, I want to download videos with a single click to my configured location, so that I can quickly save content to my preferred directory or USB drive.
 
 #### Acceptance Criteria
 
 1. WHEN a User clicks the download button on a video card, THE Application SHALL initiate the download process immediately
 2. WHEN a download is initiated, THE Application SHALL display a progress indicator on the video card
 3. WHEN a download is in progress, THE Application SHALL prevent duplicate download requests for the same video
-4. WHEN a download completes successfully, THE Application SHALL save the video file to the Windows desktop directory
+4. WHEN a download completes successfully, THE Application SHALL save the video file to the currently configured download directory
 5. WHEN a download fails, THE Application SHALL display an error message and reset the download button state
 6. WHEN a download completes, THE Application SHALL update the button to indicate completion status
 
@@ -103,14 +105,14 @@ This document specifies the requirements for a lightweight, portable Bilibili vi
 
 ### Requirement 8: File Management
 
-**User Story:** As a user, I want downloaded videos saved to my desktop with clear filenames, so that I can easily find and copy them to my USB drive.
+**User Story:** As a user, I want downloaded videos saved with clear filenames to my chosen location, so that I can easily find and manage them.
 
 #### Acceptance Criteria
 
 1. WHEN saving a downloaded video, THE Application SHALL use the video title as the base filename
 2. WHEN a filename contains invalid characters, THE Application SHALL sanitize the filename to ensure compatibility with Windows file systems
-3. WHEN a file with the same name already exists on the desktop, THE Application SHALL append a numeric suffix to avoid overwriting
-4. WHEN a download completes, THE Application SHALL verify the file was written successfully to the desktop
+3. WHEN a file with the same name already exists in the download directory, THE Application SHALL append a numeric suffix to avoid overwriting
+4. WHEN a download completes, THE Application SHALL verify the file was written successfully to the download directory
 5. THE Application SHALL save video files in MP4 format when available from the API
 
 ### Requirement 9: Error Handling
@@ -124,3 +126,17 @@ This document specifies the requirements for a lightweight, portable Bilibili vi
 3. WHEN disk space is insufficient for download, THE Application SHALL detect the condition and notify the User before attempting download
 4. WHEN an unexpected error occurs, THE Application SHALL log the error details and display a generic error message to the User
 5. WHEN displaying error messages, THE Application SHALL provide actionable guidance where possible
+
+### Requirement 10: Download Directory Selection
+
+**User Story:** As a user, I want to choose where my downloaded videos are saved, so that I can organize my files according to my preferences or save directly to my USB drive.
+
+#### Acceptance Criteria
+
+1. WHEN the Application starts, THE Application SHALL use the Windows desktop directory as the default download location
+2. WHEN a User clicks the directory selection button, THE Application SHALL open a native folder selection dialog
+3. WHEN a User selects a new directory in the dialog, THE Application SHALL update the download location to the selected directory
+4. WHEN a User cancels the directory selection dialog, THE Application SHALL maintain the current download location unchanged
+5. WHEN the selected directory becomes unavailable, THE Application SHALL revert to the desktop directory and notify the User
+6. WHEN a download is initiated, THE Application SHALL save the video file to the currently configured download directory
+7. THE Application SHALL persist the selected download directory across application restarts

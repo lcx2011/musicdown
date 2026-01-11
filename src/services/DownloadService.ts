@@ -178,12 +178,13 @@ export class DownloadService {
 
   /**
    * Download a video
-   * Requirements: 4.1, 4.2, 4.3, 4.5, 4.6, 8.5
+   * Requirements: 4.1, 4.2, 4.3, 4.5, 4.6, 8.5, 10.6
    * 
    * @param video - Video metadata
+   * @param downloadDirectory - Optional download directory (defaults to desktop)
    * @returns Promise resolving to download result
    */
-  async downloadVideo(video: Video): Promise<DownloadResult> {
+  async downloadVideo(video: Video, downloadDirectory?: string): Promise<DownloadResult> {
     // Requirements: 4.3 - Prevent duplicate downloads
     if (this.isDownloading(video.id)) {
       // Return existing download promise
@@ -194,7 +195,7 @@ export class DownloadService {
     }
 
     // Create download promise
-    const downloadPromise = this.executeDownload(video);
+    const downloadPromise = this.executeDownload(video, downloadDirectory);
     this.downloadPromises.set(video.id, downloadPromise);
 
     // Clean up promise when done
@@ -207,9 +208,9 @@ export class DownloadService {
 
   /**
    * Execute the actual download operation
-   * Requirements: 4.1, 4.2, 4.5, 4.6, 8.5
+   * Requirements: 4.1, 4.2, 4.5, 4.6, 8.5, 10.6
    */
-  private async executeDownload(video: Video): Promise<DownloadResult> {
+  private async executeDownload(video: Video, downloadDirectory?: string): Promise<DownloadResult> {
     // Wait if we've reached max concurrent downloads
     while (this.activeDownloads >= this.maxConcurrentDownloads) {
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -289,9 +290,10 @@ export class DownloadService {
         videoBuffer = Buffer.from(response.data);
       }
 
-      // Step 3: Save file to desktop
+      // Step 3: Save file to configured directory
+      // Requirements: 10.6 - Use configured download directory
       const filename = `${video.title}.mp4`;
-      const filePath = await this.fileSystemManager.saveFile(filename, videoBuffer);
+      const filePath = await this.fileSystemManager.saveFile(filename, videoBuffer, downloadDirectory);
 
       // Requirements: 4.6 - Update to completed state
       this.updateDownloadState(video.id, {

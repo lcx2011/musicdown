@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, shell, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -390,6 +390,99 @@ function setupIPCHandlers() {
       return { 
         success: false, 
         exists: false,
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  });
+
+  /**
+   * IPC handler for directory selection dialog
+   * Requirements: 10.2
+   * Opens a native folder selection dialog
+   */
+  ipcMain.handle('select-directory', async (_event, { defaultPath }: { defaultPath?: string }) => {
+    try {
+      if (!mainWindow) {
+        return { 
+          success: false, 
+          error: 'Main window not available' 
+        };
+      }
+
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory'],
+        defaultPath: defaultPath,
+        title: '选择下载目录',
+      });
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { 
+          success: true, 
+          canceled: true,
+          path: null 
+        };
+      }
+
+      return { 
+        success: true, 
+        canceled: false,
+        path: result.filePaths[0] 
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  });
+
+  /**
+   * IPC handler for directory validation
+   * Requirements: 10.5
+   * Checks if a directory exists and is writable
+   */
+  ipcMain.handle('validate-directory', async (_event, { dirPath }: { dirPath: string }) => {
+    try {
+      // Check if directory exists
+      const exists = fs.existsSync(dirPath);
+      if (!exists) {
+        return { 
+          success: true, 
+          valid: false,
+          reason: 'Directory does not exist' 
+        };
+      }
+
+      // Check if it's actually a directory
+      const stats = await fs.promises.stat(dirPath);
+      if (!stats.isDirectory()) {
+        return { 
+          success: true, 
+          valid: false,
+          reason: 'Path is not a directory' 
+        };
+      }
+
+      // Check if directory is writable by attempting to create a temp file
+      const testFile = path.join(dirPath, `.write-test-${Date.now()}`);
+      try {
+        await fs.promises.writeFile(testFile, 'test');
+        await fs.promises.unlink(testFile);
+        
+        return { 
+          success: true, 
+          valid: true 
+        };
+      } catch (writeError) {
+        return { 
+          success: true, 
+          valid: false,
+          reason: 'Directory is not writable' 
+        };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
       };
     }

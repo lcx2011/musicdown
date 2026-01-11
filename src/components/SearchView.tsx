@@ -1,8 +1,9 @@
 /**
  * SearchView Component
- * Requirements: 1.1, 1.2, 7.5
+ * Requirements: 1.1, 1.2, 7.5, 10.2, 10.3
  * 
  * Displays a centered search input field for searching Bilibili videos
+ * and directory selection button for choosing download location
  */
 
 import React, { useState, KeyboardEvent, ChangeEvent } from 'react';
@@ -11,6 +12,8 @@ export interface SearchViewProps {
   onSearch: (query: string) => void;
   isLoading: boolean;
   compact?: boolean; // New prop for compact mode
+  onSelectDirectory?: () => void; // Callback for directory selection
+  currentDirectory?: string; // Current download directory path
 }
 
 /**
@@ -20,8 +23,16 @@ export interface SearchViewProps {
  * - 1.1: Display search input field in center of interface
  * - 1.2: Handle Enter key press to submit search
  * - 7.5: Provide immediate visual feedback on interaction
+ * - 10.2: Open native folder selection dialog when user clicks directory selection button
+ * - 10.3: Update download location to selected directory
  */
-export const SearchView: React.FC<SearchViewProps> = ({ onSearch, isLoading, compact = false }) => {
+export const SearchView: React.FC<SearchViewProps> = ({ 
+  onSearch, 
+  isLoading, 
+  compact = false,
+  onSelectDirectory,
+  currentDirectory = '',
+}) => {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
@@ -57,44 +68,98 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, isLoading, com
     onSearch(trimmedQuery);
   };
 
+  /**
+   * Handle directory selection button click
+   * Requirements: 10.2
+   */
+  const handleDirectoryClick = () => {
+    if (onSelectDirectory) {
+      onSelectDirectory();
+    }
+  };
+
+  /**
+   * Get display text for directory path
+   * Truncate long paths for better display
+   */
+  const getDirectoryDisplayText = (): string => {
+    if (!currentDirectory) {
+      return '未设置';
+    }
+    
+    // Show last 2 parts of path for better readability
+    const parts = currentDirectory.split(/[/\\]/);
+    if (parts.length > 2) {
+      return `...\\${parts.slice(-2).join('\\')}`;
+    }
+    
+    return currentDirectory;
+  };
+
   // Compact mode for top bar
   if (compact) {
     return (
-      <div className="relative w-full">
-        <input
-          type="text"
-          value={query}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder="搜索视频..."
-          disabled={isLoading}
-          className={`
-            w-full px-4 py-3 text-base
-            border-2 bg-white rounded-xl
-            focus:outline-none
-            disabled:bg-neutral-100 disabled:cursor-not-allowed
-            transition-all duration-200 ease-in-out
-            ${isFocused 
-              ? 'border-primary-500 ring-2 ring-primary-200' 
-              : 'border-neutral-300 hover:border-primary-400'
-            }
-          `}
-        />
-        
-        {/* Loading spinner */}
-        {isLoading && (
-          <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-200 border-t-primary-600"></div>
-          </div>
-        )}
+      <div className="flex items-center gap-3 w-full">
+        {/* Search input */}
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="搜索视频..."
+            disabled={isLoading}
+            className={`
+              w-full px-4 py-3 text-base
+              border-2 bg-white rounded-xl
+              focus:outline-none
+              disabled:bg-neutral-100 disabled:cursor-not-allowed
+              transition-all duration-200 ease-in-out
+              ${isFocused 
+                ? 'border-primary-500 ring-2 ring-primary-200' 
+                : 'border-neutral-300 hover:border-primary-400'
+              }
+            `}
+          />
+          
+          {/* Loading spinner */}
+          {isLoading && (
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-200 border-t-primary-600"></div>
+            </div>
+          )}
 
-        {/* Search icon when not loading */}
-        {!isLoading && (
-          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-neutral-400">
+          {/* Search icon when not loading */}
+          {!isLoading && (
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-neutral-400">
+              <svg
+                className={`w-5 h-5 ${isFocused ? 'text-primary-600' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* Directory selection button - Requirements: 10.2, 10.3 */}
+        {onSelectDirectory && (
+          <button
+            onClick={handleDirectoryClick}
+            className="flex items-center gap-2 px-4 py-3 bg-white border-2 border-neutral-300 rounded-xl hover:border-primary-400 hover:bg-primary-50 transition-all duration-200 whitespace-nowrap"
+            title={currentDirectory || '选择下载目录'}
+          >
             <svg
-              className={`w-5 h-5 ${isFocused ? 'text-primary-600' : ''}`}
+              className="w-5 h-5 text-neutral-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -103,10 +168,13 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, isLoading, com
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
               />
             </svg>
-          </div>
+            <span className="text-sm font-medium text-neutral-700">
+              {getDirectoryDisplayText()}
+            </span>
+          </button>
         )}
       </div>
     );
@@ -219,6 +287,50 @@ export const SearchView: React.FC<SearchViewProps> = ({ onSearch, isLoading, com
             <span>键搜索</span>
           </span>
         </div>
+
+        {/* Directory selection section - Requirements: 10.2, 10.3 */}
+        {onSelectDirectory && (
+          <div className="mt-8 flex items-center justify-center">
+            <button
+              onClick={handleDirectoryClick}
+              className="flex items-center gap-3 px-6 py-3 bg-white border-2 border-neutral-300 rounded-xl hover:border-primary-400 hover:bg-primary-50 hover:shadow-md transition-all duration-200"
+              title={currentDirectory || '选择下载目录'}
+            >
+              <svg
+                className="w-5 h-5 text-neutral-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                />
+              </svg>
+              <div className="text-left">
+                <div className="text-xs text-neutral-500 font-medium">下载目录</div>
+                <div className="text-sm font-semibold text-neutral-700">
+                  {getDirectoryDisplayText()}
+                </div>
+              </div>
+              <svg
+                className="w-4 h-4 text-neutral-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

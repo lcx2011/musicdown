@@ -31,6 +31,9 @@ The Bilibili Downloader is a standalone Windows desktop application built using 
 │  │ Search View  │  │ Results View │  │ Download  │ │
 │  │              │  │ (Card Grid)  │  │ Manager   │ │
 │  └──────────────┘  └──────────────┘  └───────────┘ │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ Settings Button (Directory Selector)         │  │
+│  └──────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
                          │
 ┌─────────────────────────────────────────────────────┐
@@ -39,6 +42,9 @@ The Bilibili Downloader is a standalone Windows desktop application built using 
 │  │ Search       │  │ Video        │  │ Download  │ │
 │  │ Service      │  │ Service      │  │ Service   │ │
 │  └──────────────┘  └──────────────┘  └───────────┘ │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ Settings Service (Directory Management)      │  │
+│  └──────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
                          │
 ┌─────────────────────────────────────────────────────┐
@@ -47,6 +53,9 @@ The Bilibili Downloader is a standalone Windows desktop application built using 
 │  │ API Client   │  │ File System  │  │ Browser   │ │
 │  │              │  │ Manager      │  │ Launcher  │ │
 │  └──────────────┘  └──────────────┘  └───────────┘ │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ Storage Manager (Persist Settings)           │  │
+│  └──────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
                          │
 ┌─────────────────────────────────────────────────────┐
@@ -62,7 +71,8 @@ The Bilibili Downloader is a standalone Windows desktop application built using 
 
 1. **Search Flow**: User Input → Search Service → API Client → Bilibili API → Results View
 2. **Preview Flow**: Card Click → Browser Launcher → System Browser
-3. **Download Flow**: Download Button → Download Service → API Client → File System Manager → Desktop
+3. **Download Flow**: Download Button → Download Service → API Client → File System Manager → Configured Directory
+4. **Settings Flow**: Settings Button → Directory Dialog → Settings Service → Storage Manager → Update Download Path
 
 ## Components and Interfaces
 
@@ -73,6 +83,8 @@ The Bilibili Downloader is a standalone Windows desktop application built using 
 interface SearchViewProps {
   onSearch: (query: string) => void;
   isLoading: boolean;
+  onSelectDirectory: () => void;
+  currentDirectory: string;
 }
 
 // Responsibilities:
@@ -80,6 +92,8 @@ interface SearchViewProps {
 // - Handle user input and Enter key press
 // - Display loading state during search
 // - Validate and sanitize search input
+// - Render directory selection button
+// - Display current download directory path
 ```
 
 #### VideoCard Component
@@ -173,6 +187,7 @@ interface DownloadService {
   downloadVideo(video: VideoMetadata): Promise<DownloadResult>;
   getDownloadProgress(videoId: string): DownloadProgress;
   cancelDownload(videoId: string): void;
+  getDownloadDirectory(): string;
 }
 
 interface DownloadResult {
@@ -195,6 +210,26 @@ interface DownloadProgress {
 // - Manage concurrent downloads
 // - Handle download errors and retries
 // - Notify UI of progress updates
+// - Get current download directory from Settings Service
+```
+
+#### SettingsService
+```typescript
+interface SettingsService {
+  getDownloadDirectory(): string;
+  setDownloadDirectory(path: string): Promise<void>;
+  selectDirectory(): Promise<string | null>;
+  validateDirectory(path: string): Promise<boolean>;
+  resetToDefault(): void;
+}
+
+// Responsibilities:
+// - Manage download directory configuration
+// - Open native folder selection dialog
+// - Validate directory accessibility
+// - Persist settings across app restarts
+// - Provide default directory (Desktop)
+// - Handle directory unavailability
 ```
 
 ### 3. Data Access Layer
@@ -242,19 +277,38 @@ interface SearchResponse {
 ```typescript
 interface FileSystemManager {
   getDesktopPath(): string;
-  saveFile(filename: string, data: Buffer): Promise<string>;
+  saveFile(directory: string, filename: string, data: Buffer): Promise<string>;
   sanitizeFilename(filename: string): string;
-  checkDiskSpace(requiredBytes: number): Promise<boolean>;
+  checkDiskSpace(directory: string, requiredBytes: number): Promise<boolean>;
   fileExists(filepath: string): boolean;
+  directoryExists(path: string): boolean;
+  isDirectoryWritable(path: string): Promise<boolean>;
 }
 
 // Responsibilities:
 // - Resolve Windows desktop directory path
-// - Write video files to disk
+// - Write video files to specified directory
 // - Sanitize filenames for Windows compatibility
-// - Check available disk space
+// - Check available disk space in target directory
 // - Handle filename conflicts (append numeric suffix)
 // - Verify file write success
+// - Validate directory existence and write permissions
+```
+
+#### StorageManager
+```typescript
+interface StorageManager {
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+  remove(key: string): void;
+  clear(): void;
+}
+
+// Responsibilities:
+// - Persist application settings to disk
+// - Retrieve saved settings on app start
+// - Use localStorage or file-based storage
+// - Handle storage errors gracefully
 ```
 
 #### BrowserLauncher
@@ -268,6 +322,18 @@ interface BrowserLauncher {
 // - Launch system default browser with video URL
 // - Detect browser availability
 // - Handle browser launch failures
+```
+
+#### DirectorySelector
+```typescript
+interface DirectorySelector {
+  openDialog(defaultPath?: string): Promise<string | null>;
+}
+
+// Responsibilities:
+// - Open native Windows folder selection dialog
+// - Return selected directory path or null if cancelled
+// - Use Electron's dialog API
 ```
 
 ## Data Models
@@ -313,6 +379,11 @@ interface AppState {
   hasMoreResults: boolean;
   downloads: Map<string, Download>;
   errors: AppError[];
+  settings: AppSettings;
+}
+
+interface AppSettings {
+  downloadDirectory: string;
 }
 
 interface AppError {
@@ -416,6 +487,30 @@ interface AppError {
 *For any* unexpected error, the error details (message, stack trace, timestamp) should be logged, and a generic error message should be displayed to the user.
 **Validates: Requirements 9.4**
 
+### Property 23: Directory selection dialog trigger
+*For any* settings button click, the directory selection dialog should be opened.
+**Validates: Requirements 10.2**
+
+### Property 24: Directory update on selection
+*For any* valid directory path returned from the selection dialog, the application's download directory should be updated to that path.
+**Validates: Requirements 10.3**
+
+### Property 25: Directory unchanged on cancel
+*For any* directory selection that is cancelled (returns null), the current download directory should remain unchanged.
+**Validates: Requirements 10.4**
+
+### Property 26: Directory fallback on unavailability
+*For any* configured download directory that becomes inaccessible, the application should revert to the desktop directory and display a notification to the user.
+**Validates: Requirements 10.5**
+
+### Property 27: Download uses configured directory
+*For any* video download, the saved file path should start with the currently configured download directory path.
+**Validates: Requirements 10.6**
+
+### Property 28: Settings persistence round-trip
+*For any* valid directory path, setting it as the download directory and then restarting the application should result in the same directory being configured.
+**Validates: Requirements 10.7**
+
 ## Error Handling
 
 ### Error Categories
@@ -438,9 +533,16 @@ interface AppError {
    - Permission denied
    - Invalid path
    - Write failure
-   - Strategy: Check preconditions, display actionable error message, cleanup partial files
+   - Directory not accessible
+   - Strategy: Check preconditions, display actionable error message, cleanup partial files, fallback to default directory
 
-4. **Application Errors**
+4. **Settings Errors**
+   - Invalid directory path
+   - Directory no longer exists
+   - No write permission
+   - Strategy: Validate before saving, revert to default on error, notify user
+
+5. **Application Errors**
    - Unexpected exceptions
    - State corruption
    - Memory issues
@@ -531,21 +633,26 @@ The application will use **Jest** as the testing framework with **React Testing 
 **Unit Test Coverage:**
 
 1. **Component Tests**
-   - SearchView: Input handling, Enter key submission, loading states
+   - SearchView: Input handling, Enter key submission, loading states, directory button click, directory display
    - VideoCard: Click handlers, state display, error states
    - ResultsGrid: Grid rendering, scroll detection, empty states
 
 2. **Service Tests**
    - SearchService: Query sanitization, result transformation
-   - DownloadService: State management, progress tracking
+   - DownloadService: State management, progress tracking, directory retrieval
    - VideoService: URL construction, browser launching
+   - SettingsService: Directory selection, validation, persistence, default fallback
 
 3. **Utility Tests**
-   - FileSystemManager: Filename sanitization, conflict resolution
+   - FileSystemManager: Filename sanitization, conflict resolution, directory validation, write permissions
    - APIClient: Request formatting, response parsing
    - ErrorHandler: Error categorization, message generation
+   - StorageManager: Settings persistence, retrieval
 
 4. **Edge Cases**
+   - Directory becomes unavailable during download (Requirement 10.5)
+   - Invalid directory path selection
+   - Storage persistence failure
    - Empty search results display (Requirement 1.4)
    - Image load failure placeholder (Requirement 2.4)
    - Browser unavailable error (Requirement 3.4)
@@ -578,11 +685,18 @@ Property-based tests will verify universal properties across all inputs:
    - Property 8: Download state transitions (Requirements 4.2, 4.6)
    - Property 9: Duplicate download prevention (Requirements 4.3)
    - Property 18: Filename conflict resolution (Requirements 8.3)
+   - Property 24: Directory update on selection (Requirements 10.3)
+   - Property 25: Directory unchanged on cancel (Requirements 10.4)
+   - Property 27: Download uses configured directory (Requirements 10.6)
 
 4. **Error Handling Properties**
    - Property 15: API error message extraction (Requirements 5.4, 9.2)
    - Property 20: Network error messaging (Requirements 9.1)
    - Property 22: Error logging completeness (Requirements 9.4)
+   - Property 26: Directory fallback on unavailability (Requirements 10.5)
+
+5. **Persistence Properties**
+   - Property 28: Settings persistence round-trip (Requirements 10.7)
 
 **Example Property Test:**
 
@@ -621,10 +735,14 @@ Integration tests will verify component interactions:
    - Search submission → API call → Results rendering
    
 2. **Download Flow**
-   - Download button click → API extraction → File download → Desktop save
+   - Download button click → API extraction → File download → Configured directory save
 
-3. **Error Flow**
+3. **Settings Flow**
+   - Settings button click → Directory dialog → Directory selection → Settings persistence → Download to new directory
+
+4. **Error Flow**
    - API failure → Error display → State reset
+   - Directory unavailable → Fallback to desktop → User notification
 
 ### Test Execution Strategy
 

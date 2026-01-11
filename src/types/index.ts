@@ -84,6 +84,14 @@ export interface AppError {
 }
 
 /**
+ * Application settings
+ * Requirements: 10.1, 10.7
+ */
+export interface AppSettings {
+  downloadDirectory: string;
+}
+
+/**
  * Global application state
  */
 export interface AppState {
@@ -94,6 +102,7 @@ export interface AppState {
   hasMoreResults: boolean;
   downloads: Map<string, Download>;
   errors: AppError[];
+  settings: AppSettings;
 }
 
 // ============================================================================

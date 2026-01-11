@@ -1,10 +1,10 @@
 /**
  * Application Context for global state management
- * Requirements: 4.2, 4.6
+ * Requirements: 4.2, 4.6, 10.1, 10.7
  */
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { AppState, AppError, Download, Video, DownloadState } from '../types';
+import { AppState, AppError, Download, Video, DownloadState, AppSettings } from '../types';
 
 /**
  * Actions for updating application state
@@ -30,6 +30,10 @@ export interface AppActions {
   addError: (error: AppError) => void;
   removeError: (errorId: string) => void;
   clearErrors: () => void;
+
+  // Settings actions
+  setDownloadDirectory: (directory: string) => void;
+  selectDownloadDirectory: () => Promise<void>;
 }
 
 /**
@@ -63,6 +67,9 @@ const initialState: AppState = {
   hasMoreResults: false,
   downloads: new Map<string, Download>(),
   errors: [],
+  settings: {
+    downloadDirectory: '', // Will be initialized from SettingsService
+  },
 };
 
 /**
@@ -189,6 +196,42 @@ export function AppProvider({ children }: AppProviderProps): JSX.Element {
   }, []);
 
   // ============================================================================
+  // Settings Actions
+  // ============================================================================
+
+  const setDownloadDirectory = useCallback((directory: string) => {
+    setState(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        downloadDirectory: directory,
+      },
+    }));
+  }, []);
+
+  const selectDownloadDirectory = useCallback(async () => {
+    try {
+      // Use Electron IPC to open directory selection dialog
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        const result = await window.electronAPI.selectDirectory();
+        
+        // Check if user selected a directory (not cancelled)
+        if (result.success && !result.canceled && result.path) {
+          setDownloadDirectory(result.path);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to select directory:', error);
+      addError({
+        id: Date.now().toString(),
+        message: '选择目录失败',
+        type: 'filesystem',
+        timestamp: new Date(),
+      });
+    }
+  }, [setDownloadDirectory, addError]);
+
+  // ============================================================================
   // Context Value
   // ============================================================================
 
@@ -208,6 +251,8 @@ export function AppProvider({ children }: AppProviderProps): JSX.Element {
     addError,
     removeError,
     clearErrors,
+    setDownloadDirectory,
+    selectDownloadDirectory,
   };
 
   const contextValue: AppContextValue = {

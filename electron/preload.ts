@@ -67,6 +67,32 @@ const electronAPI = {
   },
 
   /**
+   * Open directory selection dialog
+   * Requirements: 10.2
+   */
+  selectDirectory: async (defaultPath?: string): Promise<{
+    success: boolean;
+    canceled?: boolean;
+    path?: string | null;
+    error?: string;
+  }> => {
+    return await ipcRenderer.invoke('select-directory', { defaultPath });
+  },
+
+  /**
+   * Validate if a directory exists and is writable
+   * Requirements: 10.5
+   */
+  validateDirectory: async (dirPath: string): Promise<{
+    success: boolean;
+    valid?: boolean;
+    reason?: string;
+    error?: string;
+  }> => {
+    return await ipcRenderer.invoke('validate-directory', { dirPath });
+  },
+
+  /**
    * Download video from Bilibili CDN
    * This bypasses CORS restrictions by running in the main process
    */

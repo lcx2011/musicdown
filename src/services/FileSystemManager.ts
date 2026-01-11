@@ -88,7 +88,9 @@ export class FileSystemManager {
         const desktopPath = await this.getDesktopPath();
         const result = await window.electronAPI.checkDiskSpace(desktopPath, requiredBytes);
         if (result.success) {
-          return result.hasSpace || true; // Default to true if check fails
+          // Use nullish coalescing to only default to true if hasSpace is undefined/null
+          // This ensures false values are properly returned when space is insufficient
+          return result.hasSpace ?? true;
         }
       }
       
@@ -171,26 +173,27 @@ export class FileSystemManager {
   }
 
   /**
-   * Save a file to the desktop with verification
-   * Requirements: 8.4
+   * Save a file to the specified directory with verification
+   * Requirements: 8.4, 10.6
    * @param filename - The desired filename
    * @param data - The file data as a Buffer
+   * @param directory - Optional directory path (defaults to desktop)
    * @returns Promise that resolves to the full file path on success
    * @throws Error if the file cannot be saved or verified
    */
-  async saveFile(filename: string, data: Buffer): Promise<string> {
+  async saveFile(filename: string, data: Buffer, directory?: string): Promise<string> {
     try {
-      // Get the desktop path
-      const desktopPath = await this.getDesktopPath();
+      // Get the target directory (use provided directory or default to desktop)
+      const targetDirectory = directory || await this.getDesktopPath();
       
       // Sanitize the filename
       const sanitizedFilename = this.sanitizeFilename(filename);
       
       // Get a unique filename to avoid conflicts
-      const uniqueFilename = await this.getUniqueFilename(desktopPath, sanitizedFilename);
+      const uniqueFilename = await this.getUniqueFilename(targetDirectory, sanitizedFilename);
       
       // Construct the full file path
-      const fullPath = this.pathJoin(desktopPath, uniqueFilename);
+      const fullPath = this.pathJoin(targetDirectory, uniqueFilename);
       
       // Use Electron IPC to save file if available
       if (typeof window !== 'undefined' && window.electronAPI) {

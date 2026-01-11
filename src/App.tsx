@@ -28,6 +28,34 @@ function App() {
   const [hasSearched, setHasSearched] = useState(false);
 
   /**
+   * Initialize download directory on app start
+   * Requirements: 10.1
+   */
+  useEffect(() => {
+    const initializeDownloadDirectory = async () => {
+      // Only initialize if directory is not set
+      if (state.settings.downloadDirectory) {
+        return;
+      }
+
+      try {
+        // Get desktop path as default
+        if (typeof window !== 'undefined' && window.electronAPI) {
+          const result = await window.electronAPI.getDesktopPath();
+          if (result.success && result.path) {
+            actions.setDownloadDirectory(result.path);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize download directory:', error);
+      }
+    };
+
+    initializeDownloadDirectory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  /**
    * Connect download service to state updates
    * Requirements: 4.2, 4.6
    */
@@ -141,11 +169,21 @@ function App() {
         ...video,
       };
 
-      await downloadService.downloadVideo(fullVideo);
+      // Pass the current download directory to the download service
+      // Requirements: 10.6
+      await downloadService.downloadVideo(fullVideo, state.settings.downloadDirectory);
     } catch (error) {
       const appError = errorHandler.handle(error as Error);
       actions.addError(appError);
     }
+  }, [actions, state.settings.downloadDirectory]);
+
+  /**
+   * Handle directory selection
+   * Requirements: 10.2, 10.3
+   */
+  const handleSelectDirectory = useCallback(async () => {
+    await actions.selectDownloadDirectory();
   }, [actions]);
 
   /**
@@ -175,13 +213,24 @@ function App() {
   return (
     <div className="w-full h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       {!hasSearched ? (
-        <SearchView onSearch={handleSearch} isLoading={state.isSearching} />
+        <SearchView 
+          onSearch={handleSearch} 
+          isLoading={state.isSearching}
+          onSelectDirectory={handleSelectDirectory}
+          currentDirectory={state.settings.downloadDirectory}
+        />
       ) : (
         <div className="flex flex-col h-full">
           {/* Compact search bar at top */}
           <div className="bg-white shadow-sm border-b border-neutral-200 px-6 py-3">
             <div className="max-w-4xl mx-auto">
-              <SearchView onSearch={handleSearch} isLoading={state.isSearching} compact={true} />
+              <SearchView 
+                onSearch={handleSearch} 
+                isLoading={state.isSearching} 
+                compact={true}
+                onSelectDirectory={handleSelectDirectory}
+                currentDirectory={state.settings.downloadDirectory}
+              />
             </div>
           </div>
 

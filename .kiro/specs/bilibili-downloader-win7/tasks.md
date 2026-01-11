@@ -23,7 +23,7 @@
   - Implement header generation logic (g-footer hash, g-timestamp)
   - _Requirements: 5.1, 5.5_
 
-- [ ]* 3.2 Write property test for API request structure
+- [ ] 3.2 Write property test for API request structure
   - **Property 12: API request structure**
   - **Validates: Requirements 5.1, 5.5**
 
@@ -33,7 +33,7 @@
   - Implement exponential backoff (1s, 2s, 5s max)
   - _Requirements: 5.3_
 
-- [ ]* 3.4 Write property test for retry logic
+- [ ] 3.4 Write property test for retry logic
   - **Property 14: Retry logic bounds**
   - **Validates: Requirements 5.3**
 
@@ -43,11 +43,11 @@
   - Handle malformed JSON responses
   - _Requirements: 5.2, 5.4_
 
-- [ ]* 3.6 Write property test for API response parsing
+- [ ] 3.6 Write property test for API response parsing
   - **Property 13: API response parsing round-trip**
   - **Validates: Requirements 5.2**
 
-- [ ]* 3.7 Write property test for API error extraction
+- [ ] 3.7 Write property test for API error extraction
   - **Property 15: API error message extraction**
   - **Validates: Requirements 5.4, 9.2**
 
@@ -55,10 +55,17 @@
 - [x] 4.1 Create FileSystemManager class
   - Implement getDesktopPath() to resolve Windows desktop directory
   - Implement fileExists() to check file existence
-  - Implement checkDiskSpace() to verify available space (>100MB)
-  - _Requirements: 4.4, 9.3_
+  - Implement checkDiskSpace() to verify available space in target directory (>100MB)
+  - Implement directoryExists() to check directory existence
+  - Implement isDirectoryWritable() to verify write permissions
+  - _Requirements: 4.4, 9.3, 10.5_
 
-- [ ]* 4.2 Write property test for disk space validation
+- [x] 4.2 Write property test for disk space validation
+
+
+
+
+
   - **Property 21: Disk space validation**
   - **Validates: Requirements 9.3**
 
@@ -69,7 +76,12 @@
   - Handle edge cases (empty string, all invalid chars)
   - _Requirements: 8.2_
 
-- [ ]* 4.4 Write property test for filename sanitization
+- [x] 4.4 Write property test for filename sanitization
+
+
+
+
+
   - **Property 17: Filename sanitization**
   - **Validates: Requirements 8.2**
 
@@ -79,48 +91,130 @@
   - Format: "filename(1).mp4", "filename(2).mp4", etc.
   - _Requirements: 8.3_
 
-- [ ]* 4.6 Write property test for filename conflict resolution
+- [x] 4.6 Write property test for filename conflict resolution
+
+
+
+
+
   - **Property 18: Filename conflict resolution**
   - **Validates: Requirements 8.3**
 
 - [x] 4.7 Implement file saving with verification
-  - Create saveFile() method to write video buffer to desktop
+  - Create saveFile() method to write video buffer to specified directory
+  - Accept directory parameter for custom download location
   - Verify file was written successfully after save
   - Return full file path on success
-  - _Requirements: 8.4_
+  - _Requirements: 8.4, 10.6_
 
-- [ ]* 4.8 Write property test for desktop file path
+- [x] 4.8 Write property test for desktop file path
+
+
+
+
+
   - **Property 10: Download saves to desktop**
   - **Validates: Requirements 4.4, 8.4**
 
-- [x] 5. Implement Download Service
-- [x] 5.1 Create DownloadService class with state management
+- [x] 4.9 Implement StorageManager for settings persistence
+
+- [x] 4.9.1 Create StorageManager class
+
+
+  - Implement get() method to retrieve settings from localStorage
+  - Implement set() method to save settings to localStorage
+  - Implement remove() and clear() methods
+  - Handle storage errors gracefully
+  - _Requirements: 10.7_
+
+- [x] 4.9.2 Implement DirectorySelector using Electron dialog
+
+
+  - Create DirectorySelector class
+  - Implement openDialog() using Electron's dialog.showOpenDialog
+  - Configure dialog for directory selection only
+  - Return selected path or null if cancelled
+  - _Requirements: 10.2_
+
+- [ ] 5. Implement Settings Service
+
+
+- [x] 5.1 Create SettingsService class
+
+
+
+  - Implement getDownloadDirectory() to retrieve current download path
+  - Implement setDownloadDirectory() to update download path
+  - Implement selectDirectory() to open folder selection dialog
+  - Implement validateDirectory() to check directory accessibility
+  - Implement resetToDefault() to revert to desktop directory
+  - Initialize with desktop as default on first run
+  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
+
+- [x] 5.2 Write property test for directory selection dialog
+
+
+  - **Property 23: Directory selection dialog trigger**
+  - **Validates: Requirements 10.2**
+
+- [x] 5.3 Write property test for directory update
+
+
+  - **Property 24: Directory update on selection**
+  - **Validates: Requirements 10.3**
+
+- [x] 5.4 Write property test for cancel behavior
+
+
+  - **Property 25: Directory unchanged on cancel**
+  - **Validates: Requirements 10.4**
+
+- [x] 5.5 Write property test for directory fallback
+
+
+  - **Property 26: Directory fallback on unavailability**
+  - **Validates: Requirements 10.5**
+
+- [x] 5.6 Write property test for settings persistence
+
+
+
+  - **Property 28: Settings persistence round-trip**
+  - **Validates: Requirements 10.7**
+
+- [x] 6. Implement Download Service
+- [x] 6.1 Create DownloadService class with state management
   - Implement downloadVideo() method
   - Track download progress with Map<videoId, Download>
   - Limit concurrent downloads to 3
   - Generate download events for UI updates
-  - _Requirements: 4.1, 4.2_
+  - Get download directory from SettingsService
+  - _Requirements: 4.1, 4.2, 10.6_
 
-- [ ]* 5.2 Write property test for download initiation
+- [ ] 6.2 Write property test for download initiation
   - **Property 7: Download initiation**
   - **Validates: Requirements 4.1**
 
-- [x] 5.3 Implement duplicate download prevention
+- [ ] 6.3 Write property test for configured directory usage
+  - **Property 27: Download uses configured directory**
+  - **Validates: Requirements 10.6**
+
+- [x] 6.4 Implement duplicate download prevention
   - Check if video is already downloading before starting
   - Return existing download promise if in progress
   - _Requirements: 4.3_
 
-- [ ]* 5.4 Write property test for duplicate prevention
+- [ ] 5.4 Write property test for duplicate prevention
   - **Property 9: Duplicate download prevention**
   - **Validates: Requirements 4.3**
 
 - [x] 5.5 Implement download state transitions
-  - Transition: IDLE → DOWNLOADING → COMPLETED/FAILED
+  - Transition: IDLE �?DOWNLOADING �?COMPLETED/FAILED
   - Emit state change events for UI updates
   - Calculate download progress percentage
   - _Requirements: 4.2, 4.6_
 
-- [ ]* 5.6 Write property test for state transitions
+- [ ] 5.6 Write property test for state transitions
   - **Property 8: Download state transitions**
   - **Validates: Requirements 4.2, 4.6**
 
@@ -130,7 +224,7 @@
   - Return error details in DownloadResult
   - _Requirements: 4.5_
 
-- [ ]* 5.8 Write property test for error recovery
+- [ ] 5.8 Write property test for error recovery
   - **Property 11: Download error recovery**
   - **Validates: Requirements 4.5**
 
@@ -140,7 +234,7 @@
   - Fall back to first available format if no MP4
   - _Requirements: 8.5_
 
-- [ ]* 5.10 Write property test for format preference
+- [ ] 5.10 Write property test for format preference
   - **Property 19: MP4 format preference**
   - **Validates: Requirements 8.5**
 
@@ -158,11 +252,11 @@
   - Validate query is non-empty after sanitization
   - _Requirements: 1.5_
 
-- [ ]* 6.3 Write property test for query sanitization
+- [ ] 6.3 Write property test for query sanitization
   - **Property 2: Input sanitization preserves safety**
   - **Validates: Requirements 1.5**
 
-- [ ]* 6.4 Write property test for search submission
+- [ ] 6.4 Write property test for search submission
   - **Property 1: Search query submission**
   - **Validates: Requirements 1.2**
 
@@ -172,7 +266,7 @@
   - Format: https://www.bilibili.com/video/{videoId}
   - _Requirements: 3.2_
 
-- [ ]* 7.2 Write property test for URL construction
+- [ ] 7.2 Write property test for URL construction
   - **Property 5: Browser URL construction**
   - **Validates: Requirements 3.2**
 
@@ -182,7 +276,7 @@
   - Handle browser launch errors
   - _Requirements: 3.1, 3.4_
 
-- [ ]* 7.4 Write property test for browser launching
+- [ ] 7.4 Write property test for browser launching
   - **Property 6: Preview launches browser**
   - **Validates: Requirements 3.1**
 
@@ -194,11 +288,11 @@
   - Log error details with timestamp and context
   - _Requirements: 9.1, 9.2, 9.4_
 
-- [ ]* 8.2 Write property test for network error messaging
+- [ ] 8.2 Write property test for network error messaging
   - **Property 20: Network error messaging**
   - **Validates: Requirements 9.1**
 
-- [ ]* 8.3 Write property test for error logging
+- [ ] 8.3 Write property test for error logging
   - **Property 22: Error logging completeness**
   - **Validates: Requirements 9.4**
 
@@ -210,11 +304,25 @@
   - Validate input is non-empty before submission
   - _Requirements: 1.1, 1.2_
 
-- [ ]* 9.2 Write unit test for SearchView
+- [x] 9.1.1 Update SearchView component for directory selection
+
+
+  - Add directory selection button to UI
+  - Display current download directory path
+  - Handle directory button click to trigger selection dialog
+  - Update UI when directory changes
+  - _Requirements: 10.2, 10.3_
+
+- [x] 9.2 Write unit test for SearchView
+
+
+
   - Test search input rendering on mount
   - Test Enter key triggers search callback
   - Test loading state display
-  - _Requirements: 1.1_
+  - Test directory button click triggers dialog
+  - Test directory path display updates
+  - _Requirements: 1.1, 10.2_
 
 - [x] 9.3 Create VideoCard component
   - Display thumbnail image with fallback placeholder
@@ -225,11 +333,11 @@
   - Display completion/error states
   - _Requirements: 2.2, 2.4, 3.1, 4.1, 4.2, 4.6_
 
-- [ ]* 9.4 Write property test for video card completeness
+- [ ] 9.4 Write property test for video card completeness
   - **Property 3: Video card completeness**
   - **Validates: Requirements 2.2**
 
-- [ ]* 9.5 Write unit test for VideoCard
+- [ ] 9.5 Write unit test for VideoCard
   - Test thumbnail fallback on image load error
   - Test click handlers for preview and download
   - Test download state display
@@ -243,22 +351,24 @@
   - Handle empty results state with message
   - _Requirements: 2.1, 2.3, 1.4_
 
-- [ ]* 9.7 Write property test for infinite scroll
+- [ ] 9.7 Write property test for infinite scroll
   - **Property 4: Infinite scroll trigger**
   - **Validates: Requirements 2.3**
 
-- [ ]* 9.8 Write unit test for ResultsGrid
+- [ ] 9.8 Write unit test for ResultsGrid
   - Test empty results message display
   - Test scroll event handling
   - _Requirements: 1.4_
 
 - [x] 10. Implement Application State Management
 - [x] 10.1 Create AppContext with React Context API
-  - Define AppState interface with search results, downloads, errors
+  - Define AppState interface with search results, downloads, errors, settings
+  - Add AppSettings interface with downloadDirectory field
   - Create context provider component
   - Implement state update actions
   - Connect services to state updates
-  - _Requirements: 4.2, 4.6_
+  - Initialize settings from StorageManager on app start
+  - _Requirements: 4.2, 4.6, 10.1, 10.7_
 
 - [x] 10.2 Implement cleanup on application exit
   - Register beforeunload event handler
@@ -266,7 +376,7 @@
   - Clear download cache
   - _Requirements: 6.4_
 
-- [ ]* 10.3 Write property test for cleanup
+- [ ] 10.3 Write property test for cleanup
   - **Property 16: Cleanup on exit**
   - **Validates: Requirements 6.4**
 
@@ -283,7 +393,9 @@
   - Create IPC channel for desktop path resolution
   - Create IPC channel for file saving
   - Create IPC channel for disk space checking
-  - _Requirements: 4.4, 9.3_
+  - Create IPC channel for directory selection dialog
+  - Create IPC channel for directory validation
+  - _Requirements: 4.4, 9.3, 10.2, 10.5_
 
 - [x] 12. Implement UI Styling and Animations
 - [x] 12.1 Create Tailwind CSS theme configuration
@@ -312,7 +424,7 @@
   - Style empty state message
   - _Requirements: 2.5_
 
-- [ ]* 12.5 Write property test for UI feedback
+- [ ] 12.5 Write property test for UI feedback
   - **Property 7.5: Immediate visual feedback on interaction**
   - **Validates: Requirements 7.5**
 
@@ -346,19 +458,25 @@
 
 - [ ] 15. Integration and end-to-end testing
 - [x] 15.1 Write integration test for search flow
-  - Test: Search input → API call → Results display
+  - Test: Search input �?API call �?Results display
   - Verify VideoCard components render with correct data
   - _Requirements: 1.2, 2.1, 2.2_
 
-- [ ]* 15.2 Write integration test for download flow
-  - Test: Download button → API extraction → File save → State update
-  - Verify file appears on desktop with correct name
-  - _Requirements: 4.1, 4.4, 8.1_
+- [ ] 15.2 Write integration test for download flow
+  - Test: Download button �?API extraction �?File save �?State update
+  - Verify file appears in configured directory with correct name
+  - _Requirements: 4.1, 4.4, 8.1, 10.6_
 
-- [ ]* 15.3 Write integration test for error flow
-  - Test: API failure → Error display → State reset
+- [ ] 15.3 Write integration test for settings flow
+  - Test: Settings button �?Directory dialog �?Directory selection �?Settings persistence �?Download to new directory
+  - Verify directory persists across app restarts
+  - _Requirements: 10.2, 10.3, 10.6, 10.7_
+
+- [ ] 15.4 Write integration test for error flow
+  - Test: API failure �?Error display �?State reset
   - Verify error message appears and download button resets
-  - _Requirements: 4.5, 9.2_
+  - Test: Directory unavailable �?Fallback to desktop �?User notification
+  - _Requirements: 4.5, 9.2, 10.5_
 
 - [x] 16. Configure actual API endpoints
 
@@ -376,11 +494,14 @@
 - [x] 17. Manual testing and bug fixes
   - Test application on Windows 7 32-bit VM
   - Verify all features work as expected
-  - Test edge cases (network failures, disk space issues, invalid inputs)
+  - Test edge cases (network failures, disk space issues, invalid inputs, directory unavailability)
+  - Test directory selection and persistence
+  - Verify downloads go to configured directory
   - Fix any bugs discovered during testing
   - **COMPLETED**: Implemented IPC-based solution to bypass CORS and unsafe header restrictions
   - **COMPLETED**: All 117 tests passing
   - **NEXT**: Test in actual Electron environment with `npm run dev`
+  - **TODO**: Test directory selection feature
   - _Requirements: All_
 
 - [x] 18. Final checkpoint - Ensure all tests pass
