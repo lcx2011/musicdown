@@ -475,7 +475,7 @@ describe('SettingsService', () => {
               )?.[1];
 
               // Simulate app restart: Create new service instance
-              mockStorageManager.get.mockReturnValue(savedValue);
+              mockStorageManager.get.mockReturnValue(savedValue ?? null);
               
               const service2 = new SettingsService(
                 mockStorageManager,

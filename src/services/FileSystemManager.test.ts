@@ -3,7 +3,6 @@
  */
 
 import { FileSystemManager } from './FileSystemManager';
-import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as fc from 'fast-check';

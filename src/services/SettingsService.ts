@@ -153,7 +153,7 @@ export class SettingsService {
           return false;
         }
         
-        return result.valid || false;
+        return result.isValid || false;
       }
       
       // Fallback for non-Electron environments (testing)

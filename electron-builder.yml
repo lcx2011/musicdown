@@ -14,12 +14,8 @@ asarUnpack:
 compression: maximum
 win:
   target:
-    - target: portable
+    - target: dir
       arch:
         - ia32
   icon: assets/icon.ico
-  artifactName: BilibiliDownloader-Portable.exe
   requestedExecutionLevel: asInvoker
-portable:
-  artifactName: BilibiliDownloader-Portable.exe
-  unicode: false

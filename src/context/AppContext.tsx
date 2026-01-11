@@ -4,7 +4,7 @@
  */
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { AppState, AppError, Download, Video, DownloadState, AppSettings } from '../types';
+import { AppState, AppError, Download, Video, DownloadState } from '../types';
 
 /**
  * Actions for updating application state

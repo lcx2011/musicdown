@@ -43,19 +43,12 @@ module.exports = {
   win: {
     target: [
       {
-        target: 'portable',
+        target: 'dir',
         arch: ['ia32'],
       },
     ],
     icon: 'assets/icon.ico',
-    artifactName: 'BilibiliDownloader-Portable.exe',
     requestedExecutionLevel: 'asInvoker',
-  },
-  
-  // Portable executable configuration
-  portable: {
-    artifactName: 'BilibiliDownloader-Portable.exe',
-    unicode: false,
   },
   
   // Exclude unnecessary files from node_modules

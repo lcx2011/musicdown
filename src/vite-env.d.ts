@@ -32,6 +32,17 @@ export interface ElectronAPI {
     statusCode?: number;
   }>;
   onDownloadProgress: (callback: (progress: { url: string; loaded: number; total: number; percentage: number }) => void) => void;
+  selectDirectory: (defaultPath?: string) => Promise<{ 
+    success: boolean; 
+    path?: string;
+    canceled?: boolean;
+    error?: string 
+  }>;
+  validateDirectory: (path: string) => Promise<{ 
+    success: boolean; 
+    isValid?: boolean; 
+    error?: string 
+  }>;
 }
 
 declare global {

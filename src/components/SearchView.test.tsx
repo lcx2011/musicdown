@@ -3,7 +3,6 @@
  * Requirements: 1.1, 1.2, 10.2, 10.3
  */
 
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { SearchView } from './SearchView';
